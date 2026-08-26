@@ -1,0 +1,13 @@
+## Think-Pair-Share Activity
+
+Your task is to select **one real-world business scenario** and build an **end-to-end Python pipeline**.
+
+This pipeline must perform web searches, apply custom **Prompt Engineering** techniques, enforce strict **JSON schemas using Pydantic**, and protect against **Indirect Prompt Injection**.
+
+## Business Scenarios
+
+1. **B2B Competitive Pricing & Feature Tracker** — Periodically search for E-commerce websites, extract tier names, prices, features, and discount flags, and format them into a strict database schema.
+
+2. **Autonomous Regulatory & Compliance Radar** — Scrape legal/governmental news, extract new compliance updates, effective dates, regulatory bodies, and required internal action items.
+
+3. **Public Procurement RFP & Grant** — Crawl municipal portals to extract open RFPs, submission deadlines, budget ranges, and eligibility criteria into normalized JSON objects.

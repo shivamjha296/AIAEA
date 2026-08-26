@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Logs
+*.log
+pipeline.log
+
+# Database
+compliance.db
+*.db-shm
+*.db-wal
+
+# Reports (generated at runtime — large files)
+reports/
+
+# Temp downloads
+temp_downloads/
+
+# Environment files
+.env
+.env.local
+api/.env
+*.env
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+frontend/.env.local
+frontend/.env*.local
+
+# Next.js build output
+frontend/.vercel
+
+# Tailwind / PostCSS
+frontend/postcss.config.js.bak
+
+# TypeScript
+*.tsbuildinfo
+frontend/next-env.d.ts
