@@ -9,8 +9,10 @@ The Privileged LLM NEVER sees untrusted raw content.
 
 import json
 import logging
+import time
 from typing import Optional
 import httpx
+from pydantic import ValidationError
 
 from config import (
     OLLAMA_BASE_URL,
@@ -104,39 +106,62 @@ KEY REQUIREMENTS:
         },
     }
 
-    try:
-        logger.info(f"Calling Privileged LLM ({OLLAMA_MODEL}) for impact analysis...")
-        response = httpx.post(
-            url,
-            json=payload,
-            timeout=OLLAMA_REQUEST_TIMEOUT,
-        )
-        response.raise_for_status()
+    max_retries = 3
+    base_wait = 2
 
-        result = response.json()
-        content = result.get("message", {}).get("content", "")
-        if not content:
-            logger.error("Privileged LLM returned empty content")
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(f"Calling Privileged LLM ({OLLAMA_MODEL}) for impact analysis... (Attempt {attempt}/{max_retries})")
+            response = httpx.post(
+                url,
+                json=payload,
+                timeout=OLLAMA_REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+
+            result = response.json()
+            content = result.get("message", {}).get("content", "")
+            if not content:
+                logger.error(f"Privileged LLM returned empty content (Attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    time.sleep(base_wait ** attempt)
+                    continue
+                return None
+
+            parsed_json = json.loads(content)
+
+            # Normalize string lists if LLM formats entries as dict objects
+            if "compliance_gaps" in parsed_json and isinstance(parsed_json["compliance_gaps"], list):
+                parsed_json["compliance_gaps"] = [
+                    g if isinstance(g, str) else (g.get("gap_title") or g.get("description") or str(g))
+                    for g in parsed_json["compliance_gaps"]
+                ]
+            if "affected_processes" in parsed_json and isinstance(parsed_json["affected_processes"], list):
+                parsed_json["affected_processes"] = [
+                    p if isinstance(p, str) else (p.get("process_name") or p.get("process") or str(p))
+                    for p in parsed_json["affected_processes"]
+                ]
+
+            impact = ImpactAnalysis(**parsed_json)
+            logger.info(f"Privileged LLM analysis complete: risk={impact.risk_level}")
+            return impact
+
+        except httpx.RequestError as e:
+            logger.warning(f"Ollama network error (Attempt {attempt}/{max_retries}): {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Ollama HTTP error (Attempt {attempt}/{max_retries}): {e}")
+        except json.JSONDecodeError as e:
+            logger.warning(f"Ollama JSON parse error (Attempt {attempt}/{max_retries}): {e}")
+        except ValidationError as e:
+            logger.warning(f"Ollama Pydantic validation error (Attempt {attempt}/{max_retries}): {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in Privileged LLM impact analysis: {e}")
             return None
 
-        parsed_json = json.loads(content)
-
-        # Normalize string lists if LLM formats entries as dict objects
-        if "compliance_gaps" in parsed_json and isinstance(parsed_json["compliance_gaps"], list):
-            parsed_json["compliance_gaps"] = [
-                g if isinstance(g, str) else (g.get("gap_title") or g.get("description") or str(g))
-                for g in parsed_json["compliance_gaps"]
-            ]
-        if "affected_processes" in parsed_json and isinstance(parsed_json["affected_processes"], list):
-            parsed_json["affected_processes"] = [
-                p if isinstance(p, str) else (p.get("process_name") or p.get("process") or str(p))
-                for p in parsed_json["affected_processes"]
-            ]
-
-        impact = ImpactAnalysis(**parsed_json)
-        logger.info(f"Privileged LLM analysis complete: risk={impact.risk_level}")
-        return impact
-
-    except Exception as e:
-        logger.error(f"Privileged LLM impact analysis failed: {e}")
-        return None
+        if attempt < max_retries:
+            sleep_time = base_wait ** attempt
+            logger.info(f"Retrying in {sleep_time}s...")
+            time.sleep(sleep_time)
+            
+    logger.error(f"Privileged LLM impact analysis failed after {max_retries} attempts.")
+    return None

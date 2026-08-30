@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, ExternalLink, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import TopBar from '@/components/layout/TopBar';
 import ScanPanel from '@/components/layout/ScanPanel';
 import EmptyState from '@/components/ui/EmptyState';
@@ -91,7 +91,7 @@ export default function ReviewPage() {
     } catch { /* quiet */ }
     setLoading(false);
   };
-
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   const showToast = (msg: string) => {

@@ -10,8 +10,10 @@ trapped within the JSON structure.
 
 import json
 import logging
+import time
 from typing import Optional
 import httpx
+from pydantic import ValidationError
 
 from config import (
     OLLAMA_BASE_URL,
@@ -75,54 +77,75 @@ def _call_ollama(prompt: str, system_prompt: str, temperature: float) -> Optiona
         },
     }
 
-    try:
-        logger.info(f"Calling Ollama ({OLLAMA_MODEL}) for extraction...")
-        response = httpx.post(
-            url,
-            json=payload,
-            timeout=OLLAMA_REQUEST_TIMEOUT,
-        )
-        response.raise_for_status()
+    logger.info(f"Calling Ollama ({OLLAMA_MODEL}) for extraction...")
+    response = httpx.post(
+        url,
+        json=payload,
+        timeout=OLLAMA_REQUEST_TIMEOUT,
+    )
+    response.raise_for_status()
 
-        result = response.json()
-        content = result.get("message", {}).get("content", "")
-        if content:
-            logger.info(f"Ollama response received: {len(content)} chars")
-            return content
-    except Exception as e:
-        logger.error(f"Ollama call ({OLLAMA_MODEL}) failed: {e}")
+    result = response.json()
+    content = result.get("message", {}).get("content", "")
+    if content:
+        logger.info(f"Ollama response received: {len(content)} chars")
+        return content
     return None
 
 
 def quarantined_extraction(untrusted_content: str, source_url: str = "") -> Optional[RegulatoryExtraction]:
     """
-    MODULE 6-8: Pure Quarantined LLM extraction via Ollama.
+    MODULE 6-8: Pure Quarantined LLM extraction via Ollama with robust retries.
     """
     max_input = 50_000
     truncated_content = untrusted_content
     if len(truncated_content) > max_input:
         truncated_content = truncated_content[:max_input] + "\n\n[CONTENT TRUNCATED FOR PROCESSING]"
 
-    raw_response = _call_ollama(
-        prompt=truncated_content,
-        system_prompt=QUARANTINED_SYSTEM_PROMPT,
-        temperature=OLLAMA_TEMPERATURE_EXTRACTION,
-    )
+    max_retries = 3
+    base_wait = 2
 
-    if not raw_response:
-        logger.error(f"Quarantined LLM returned no response for: {source_url}")
-        return None
+    for attempt in range(1, max_retries + 1):
+        try:
+            raw_response = _call_ollama(
+                prompt=truncated_content,
+                system_prompt=QUARANTINED_SYSTEM_PROMPT,
+                temperature=OLLAMA_TEMPERATURE_EXTRACTION,
+            )
 
-    try:
-        parsed_json = json.loads(raw_response)
-        extraction = RegulatoryExtraction(**parsed_json)
-        logger.info(
-            f"Quarantined LLM extraction successful: "
-            f"title='{extraction.title[:60]}', "
-            f"body='{extraction.regulatory_body}', "
-            f"requirements={len(extraction.key_requirements)}"
-        )
-        return extraction
-    except Exception as e:
-        logger.error(f"Pydantic validation failed for Quarantined LLM output: {e}")
-        return None
+            if not raw_response:
+                logger.error(f"Quarantined LLM returned no response for: {source_url} (Attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    time.sleep(base_wait ** attempt)
+                    continue
+                return None
+
+            parsed_json = json.loads(raw_response)
+            extraction = RegulatoryExtraction(**parsed_json)
+            logger.info(
+                f"Quarantined LLM extraction successful: "
+                f"title='{extraction.title[:60]}', "
+                f"body='{extraction.regulatory_body}', "
+                f"requirements={len(extraction.key_requirements)}"
+            )
+            return extraction
+            
+        except httpx.RequestError as e:
+            logger.warning(f"Ollama network error (Attempt {attempt}/{max_retries}): {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Ollama HTTP error (Attempt {attempt}/{max_retries}): {e}")
+        except json.JSONDecodeError as e:
+            logger.warning(f"Ollama JSON parse error (Attempt {attempt}/{max_retries}): {e}")
+        except ValidationError as e:
+            logger.warning(f"Ollama Pydantic validation error (Attempt {attempt}/{max_retries}): {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error in Quarantined LLM extraction: {e}")
+            return None
+            
+        if attempt < max_retries:
+            sleep_time = base_wait ** attempt
+            logger.info(f"Retrying in {sleep_time}s...")
+            time.sleep(sleep_time)
+
+    logger.error(f"Quarantined LLM extraction failed after {max_retries} attempts for: {source_url}")
+    return None

@@ -1,4 +1,4 @@
-import type { RiskLevel, TrustLevel, VerificationStatus, ExtractionStatus } from './types';
+import type { RiskLevel } from './types';
 
 // ── Risk colors (Professional Light Theme) ───────────────────
 export const RISK_COLORS: Record<RiskLevel, string> = {

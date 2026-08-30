@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { ExternalLink, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { RegulationListItem, RiskDistribution } from '@/lib/types';
-import { RiskBadge, VerificationBadge } from '@/components/ui/Badges';
+import { RiskBadge } from '@/components/ui/Badges';
 import { timeAgo, truncate, domainFromUrl, RISK_COLORS } from '@/lib/utils';
 
 function RiskBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {

@@ -46,6 +46,10 @@ DDGS_REGION = "in-en"        # India — English
 DDGS_TIMELIMIT = "m"         # Last month
 DDGS_MAX_RESULTS = 10        # Results per query
 
+SEARXNG_BASE_URL = "https://search.mdosch.de" # Public instance for testing
+SEARXNG_ENGINES = "duckduckgo,bing"   # Multiple engines for SearXNG
+SEARXNG_MAX_RESULTS = 10
+
 
 # ============================================================
 # ORGANIZATION PROFILE — PUBLICLY AVAILABLE INFORMATION ONLY

@@ -42,7 +42,10 @@ export default function RegulationsPage() {
     setLoading(false);
   }, [page, filters]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    load();
+  }, []);
   useEffect(() => {
     fetchRegulatorsList().then(setRegulators).catch(() => {});
   }, []);

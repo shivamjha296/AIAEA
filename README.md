@@ -13,9 +13,9 @@ The system watches Indian regulatory websites 24/7, extracts compliance requirem
 **The full pipeline, step by step:**
 
 ```
-Live Web Search (DuckDuckGo)
+Live Web Search (SearchProvider Abstraction -> DDGSSearchProvider)
         ↓
-Real Regulatory Sources (RBI, MeitY, CERT-In …)
+Real Regulatory Sources (RBI, MeitY, CERT-In, SEBI, MCA)
         ↓
 HTML / PDF Extraction
         ↓
@@ -44,17 +44,17 @@ Next.js Web Dashboard
 
 | Layer | Technology |
 |---|---|
-| Web search | DuckDuckGo Search (DDGS) — live, no API key |
+| Web search | SearchProvider interface (DDGSSearchProvider default) — live, no API key |
 | HTML extraction | BeautifulSoup4 |
 | PDF extraction | PyMuPDF / pdfplumber |
-| LLM inference | Ollama (local) — Mistral/LLaMA |
+| LLM inference | Ollama (local) — llama3.2:1b |
 | Data validation | Pydantic v2 |
 | Security | Custom IPI (Indirect Prompt Injection) scanner |
 | API backend | FastAPI + Uvicorn |
 | Database | SQLite |
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS |
 | Charts | Recharts |
-| Tests | Pytest (57 tests, all passing) |
+| Tests | Pytest (74 tests, all passing) |
 
 ---
 
@@ -140,15 +140,13 @@ pip install -r requirements.txt
 # Install Ollama (Windows)
 winget install Ollama.Ollama
 
-# Pull a model (pick one)
-ollama pull mistral
-ollama pull llama3.1
-ollama pull qwen2.5
+# Pull the configured model
+ollama pull llama3.2:1b
 ```
 
-Then update `config.py` line 22 to match the model you pulled:
+Then update `config.py` line 22 if you pulled a different model:
 ```python
-OLLAMA_MODEL = "mistral"   # or "llama3.1" or "qwen2.5"
+OLLAMA_MODEL = "llama3.2:1b"
 ```
 
 ### 4. Install frontend dependencies
@@ -284,7 +282,7 @@ cd "AIAEA ACT-1"
 pytest tests/ -v
 ```
 
-57 tests covering all 14 pipeline modules.
+74 tests covering all pipeline modules.
 
 ---
 

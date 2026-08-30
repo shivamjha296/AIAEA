@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  RadialBarChart, RadialBar, PieChart, Pie, Cell,
-  Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
+  Tooltip, ResponsiveContainer,
 } from 'recharts';
 import Link from 'next/link';
 import TopBar from '@/components/layout/TopBar';
@@ -35,7 +35,7 @@ export default function RiskPage() {
     } catch { /* quiet */ }
     setLoading(false);
   }, [riskFilter]);
-
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const pieData = RISK_ORDER

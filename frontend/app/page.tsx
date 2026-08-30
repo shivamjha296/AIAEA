@@ -18,6 +18,9 @@ export default function OverviewPage() {
   const [dist, setDist] = useState<RiskDistribution>({ CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, UNKNOWN: 0 });
   const [period, setPeriod] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  if (error) throw error;
 
   const loadAll = useCallback(async () => {
     try {
@@ -33,12 +36,16 @@ export default function OverviewPage() {
       setDist(d);
     } catch (e) {
       console.error('Dashboard load error:', e);
+      setError(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setLoading(false);
     }
   }, [period]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadAll();
+  }, []);
 
   const handlePeriod = (d: number) => {
     setPeriod(d);

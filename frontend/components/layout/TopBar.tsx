@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle, Clock, RefreshCw, Scan, X } from 'lucide-react';
+import { RefreshCw, Scan } from 'lucide-react';
 import type { HealthStatus } from '@/lib/types';
 import { fetchHealth } from '@/lib/api';
 
@@ -27,14 +27,15 @@ export default function TopBar({ title, subtitle, onScanClick }: TopBarProps) {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const loadHealth = async () => {
-    setLoading(true);
+  const loadHealth = async (isMount = false) => {
+    if (!isMount) setLoading(true);
     try { setHealth(await fetchHealth()); }
     catch { /* quiet */ }
-    finally { setLoading(false); }
+    finally { if (!isMount) setLoading(false); }
   };
 
-  useEffect(() => { loadHealth(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadHealth(true); }, []);
 
   return (
     <div style={{
@@ -77,7 +78,7 @@ export default function TopBar({ title, subtitle, onScanClick }: TopBarProps) {
         )}
 
         <button
-          onClick={loadHealth}
+          onClick={() => loadHealth(false)}
           style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
           title="Refresh status"
         >

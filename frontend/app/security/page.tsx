@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import TopBar from '@/components/layout/TopBar';
 import ScanPanel from '@/components/layout/ScanPanel';
-import EmptyState from '@/components/ui/EmptyState';
 import { SeverityBadge } from '@/components/ui/Badges';
-import { SkeletonCard } from '@/components/ui/Skeletons';
 import type { SecurityEvent, SecurityMetrics } from '@/lib/types';
 import { fetchSecurityEvents, fetchSecurityMetrics } from '@/lib/api';
-import { formatDateTime, domainFromUrl, truncate } from '@/lib/utils';
-import { ShieldCheck, ShieldAlert, CheckCircle2, Lock, ArrowRight } from 'lucide-react';
+import { domainFromUrl, formatDateTime } from '@/lib/utils';
+import { ShieldCheck } from 'lucide-react';
 
 function TrustBoundaryDiagram() {
   const steps = [
@@ -68,10 +66,11 @@ export default function SecurityPage() {
   const [scanOpen, setScanOpen] = useState(false);
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  if (error) throw error;
 
   const load = async () => {
-    setLoading(true);
     try {
       const [e, m] = await Promise.all([
         fetchSecurityEvents(50),
@@ -79,10 +78,12 @@ export default function SecurityPage() {
       ]);
       setEvents(e);
       setMetrics(m);
-    } catch { /* quiet */ }
-    setLoading(false);
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error(String(e)));
+    }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   return (

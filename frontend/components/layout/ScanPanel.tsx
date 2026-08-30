@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { CheckCircle, AlertCircle, Loader, X, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { CheckCircle, AlertCircle, Loader, X, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ScanEvent } from '@/lib/types';
 import { startScan, getScanEventsUrl } from '@/lib/api';
 import { EVENT_ICONS } from '@/lib/utils';
@@ -12,7 +12,6 @@ interface ScanPanelProps {
   onComplete: () => void;
 }
 
-type StageStatus = 'pending' | 'running' | 'done' | 'error';
 
 const STAGES = [
   'INITIALIZING', 'QUERY_GENERATION', 'SEARCHING',
